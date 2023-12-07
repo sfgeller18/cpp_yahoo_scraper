@@ -2,7 +2,19 @@ cmake_minimum_required(VERSION 3.10)
 project(Query)
 
 # Set C++ standard
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 20)
+
+find_package(mongocxx REQUIRED)
+
+execute_process(
+    COMMAND pkg-config --cflags --libs libmongocxx
+    OUTPUT_VARIABLE MONGOCXX_FLAGS
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MONGOCXX_FLAGS}")
+
+
 
 # Find and configure Qt
 set(CMAKE_AUTOUIC ON)
@@ -22,6 +34,7 @@ include_directories(${FORMS_DIR})
 include_directories(${INCLUDE_DIR})
 include_directories(${SOURCE_DIR})
 
+
 # Find and link against libcurl
 find_package(CURL REQUIRED)
 include_directories(${CURL_INCLUDE_DIR})
@@ -36,8 +49,7 @@ file(GLOB_RECURSE SOURCES
     "${INCLUDE_DIR}/*.h"
 )
 
-# Create the executable
 add_executable(query ${SOURCES})
 
 # Link against libcurl and Qt::Widgets
-target_link_libraries(query PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${CURL_LIBRARIES})
+target_link_libraries(query PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${CURL_LIBRARIES} mongocxx bsoncxx)

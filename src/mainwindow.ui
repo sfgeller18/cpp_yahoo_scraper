@@ -200,6 +200,9 @@
       <height>23</height>
      </rect>
     </property>
+    <property name="calendarPopup">
+     <bool>true</bool>
+    </property>
     <property name="date">
      <date>
       <year>2023</year>
@@ -218,7 +221,7 @@
      </rect>
     </property>
     <property name="calendarPopup">
-     <bool>false</bool>
+     <bool>true</bool>
     </property>
     <property name="date">
      <date>
@@ -227,15 +230,8 @@
       <day>5</day>
      </date>
     </property>
-   </widget>
-   <widget class="QDateEdit" name="dateEdit_3">
-    <property name="geometry">
-     <rect>
-      <x>540</x>
-      <y>150</y>
-      <width>110</width>
-      <height>23</height>
-     </rect>
+    <property name="calendarPopup">
+     <bool>true</bool>
     </property>
     <property name="date">
      <date>
@@ -282,22 +278,6 @@
     </property>
     <property name="text">
      <string>Interval:</string>
-    </property>
-   </widget>
-   <widget class="QLineEdit" name="lineEdit_3">
-    <property name="geometry">
-     <rect>
-      <x>180</x>
-      <y>230</y>
-      <width>113</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="maxLength">
-     <number>5</number>
-    </property>
-    <property name="clearButtonEnabled">
-     <bool>false</bool>
     </property>
    </widget>
    <widget class="QCheckBox" name="checkBox_3">
@@ -410,6 +390,26 @@
     </property>
     <property name="text">
      <string>O        H        L         C        A         V</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="comboBox">
+    <property name="geometry">
+     <rect>
+      <x>180</x>
+      <y>230</y>
+      <width>111</width>
+      <height>22</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="comboBox_2">
+    <property name="geometry">
+     <rect>
+      <x>540</x>
+      <y>150</y>
+      <width>111</width>
+      <height>22</height>
+     </rect>
     </property>
    </widget>
   </widget>

@@ -44,4 +44,18 @@ std::time_t to_time(const std::string& date) {
     return std::chrono::system_clock::to_time_t(std::chrono::system_clock::from_time_t(std::mktime(&tmDate)));
 }
 
+std::string unixToString(const std::string& unixTimestamp) {
+    // Convert string to integer
+    std::time_t timestamp = std::stoi(unixTimestamp);
+
+    // Convert timestamp to tm struct in UTC
+    std::tm* timeInfo = std::gmtime(&timestamp);
+
+    // Format the date as yyyy-mm-dd
+    std::ostringstream oss;
+    oss << std::put_time(timeInfo, "%Y-%m-%d");
+
+    return oss.str();
+}
+
 #endif

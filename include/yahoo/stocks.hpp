@@ -114,6 +114,8 @@ json GetHistoricalPrices(
         std::string interval
     ) {
 
+        if (startDate == endDate) {return json("");}
+
         std::string ss1 = timestamper(startDate); 
         std::string ss2 = timestamper(endDate); 
         

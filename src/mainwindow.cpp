@@ -1,25 +1,36 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
+
+MainWindow::MainWindow(const QStringList& expirationDates, QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
 
     ui->dateEdit->setDate(QDate::currentDate());
     ui->dateEdit_2->setDate(QDate::currentDate());
-    ui->dateEdit_3->setDate(QDate(2023, 12, 8));
 
-    ui->lineEdit_3->setText("1d");
+    comboBox = new QComboBox(this);
+    comboBox_2 = new QComboBox(this);
     
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->addWidget(comboBox);
+    layout->addWidget(comboBox_2);
+
+    comboBox->addItems({"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"});
+    ui->comboBox_2->addItems(expirationDates);
+
+    comboBox->setGeometry(180, 230, 111, 22);
+    comboBox_2->setGeometry(540, 150, 111, 22);
+
 
     // Connect line edits to slots
     connect(ui->lineEdit_2, &QLineEdit::textChanged, this, &MainWindow::on_lineEdit_2_textChanged);
-    connect(ui->lineEdit_3, &QLineEdit::textChanged, this, &MainWindow::on_lineEdit_3_textChanged);
     connect(ui->lineEdit_11, &QLineEdit::textChanged, this, &MainWindow::on_lineEdit_11_textChanged);
+    connect(comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onComboBoxIntervalChanged);
+    connect(comboBox_2, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onComboBoxExpirationChanged);
 
     // Connect date edits to slots
     connect(ui->dateEdit, &QDateEdit::dateChanged, this, &MainWindow::on_dateEdit_startDate_dateChanged);
     connect(ui->dateEdit_2, &QDateEdit::dateChanged, this, &MainWindow::on_dateEdit_endDate_dateChanged);
-    connect(ui->dateEdit_3, &QDateEdit::dateChanged, this, &MainWindow::on_dateEdit_expirationDate_dateChanged);
 
     connect(ui->checkBox_3, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_open_stateChanged);
     connect(ui->checkBox_4, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_high_stateChanged);
@@ -42,9 +53,15 @@ MainWindow::~MainWindow() {
 void MainWindow::on_lineEdit_2_textChanged(const QString &text) {
     ticker = text;
 }
+void MainWindow::onComboBoxIntervalChanged(const int& index)
+{
+        interval = comboBox->itemText(index);
+}
 
-void MainWindow::on_lineEdit_3_textChanged(const QString &text) {
-    interval = text;
+void MainWindow::onComboBoxExpirationChanged(const int& index)
+{
+        expirationDate = comboBox->itemText(index);
+        qDebug() << "Selected Interval: " << expirationDate;
 }
 
 void MainWindow::on_lineEdit_11_textChanged(const QString &text) {
@@ -58,10 +75,6 @@ void MainWindow::on_dateEdit_startDate_dateChanged(const QDate &date) {
 
 void MainWindow::on_dateEdit_endDate_dateChanged(const QDate &date) {
     startDate = date;
-}
-
-void MainWindow::on_dateEdit_expirationDate_dateChanged(const QDate &date) {
-    expirationDate = date;
 }
 
 void MainWindow::on_checkBox_calls_stateChanged(int state) {
@@ -109,11 +122,11 @@ void MainWindow::setEndDate(const QDate &value) {
     endDate = value;
 }
 
-QDate MainWindow::getExpirationDate() const {
+QString MainWindow::getExpirationDate() const {
     return expirationDate;
 }
 
-void MainWindow::setExpirationDate(const QDate &value) {
+void MainWindow::setExpirationDate(const QString &value) {
     expirationDate = value;
 }
 

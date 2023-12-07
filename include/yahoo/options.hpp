@@ -21,6 +21,54 @@ using json = nlohmann::json;
 namespace yahoo{
     namespace options {
 
+        std::vector<std::string> getExpirations(const std::string& symbol) {
+            // Construct the URL
+            std::string url = "https://query1.finance.yahoo.com/v7/finance/options/" + symbol;
+
+            // Initialize libcurl
+            CURL* curl = curl_easy_init();
+
+            if (curl) {
+                // Set the URL
+                curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+
+                // Set the callback function to write response data to a string
+                std::string response;
+                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+                curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+                // Perform the request
+                CURLcode res = curl_easy_perform(curl);
+
+                // Check for errors
+                if (res != CURLE_OK) {
+                    std::cerr << "Error: " << curl_easy_strerror(res) << std::endl;
+                    curl_easy_cleanup(curl);
+                    return std::vector<std::string>(); // Return an empty vector on error
+                }
+
+                // Cleanup libcurl
+                curl_easy_cleanup(curl);
+
+                // Parse JSON response
+                nlohmann::json data = nlohmann::json::parse(response);
+
+                // Access the expiration dates array
+                auto expirationDates = data["optionChain"]["result"][0]["expirationDates"];
+
+                // Convert expiration dates to vector of strings
+                std::vector<std::string> expirationStrings;
+                for (const auto& timestamp : expirationDates) {
+                    expirationStrings.push_back(timestamp.dump());
+                }
+
+                return expirationStrings;
+            } else {
+                std::cerr << "Error: Unable to initialize libcurl." << std::endl;
+                return std::vector<std::string>(); // Return an empty vector on error
+            }
+        }
+
         const std::unordered_map<std::string, int> optionCols = {
             {"contractSymbol", 0},
             {"strike", 1},
