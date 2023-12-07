@@ -206,6 +206,7 @@ namespace yahoo{
         }
 
         void JSONtoCSV(json& data, const std::string& filePath) {
+            try{
                 std::ofstream csvFile(filePath);
                 if (!csvFile.is_open()) {
                     throw std::runtime_error("Error: Unable to open file for writing.");
@@ -214,11 +215,17 @@ namespace yahoo{
                 printObj(data, csvFile);
             csvFile.close();
             std::cout << "Data successfully saved to CSV" << std::endl;
+            } catch (const std::exception& e) {
+                std::cerr << "Error in downloadOptions: " << e.what() << std::endl;
+            } catch (...) {
+                std::cerr << "Unknown error occurred in downloadOptions." << std::endl;
+        }
         }
 
         void downloadCSV(const std::string& ticker, const std::string& date, std::string filePath = "") {
             try {
                 std::string responseBuffer = GetJSON(ticker, date);
+                if responseBuffer
                 parseBuffer(responseBuffer);
                 std::pair<std::string, std::string> CPpair = splitBuffer(responseBuffer);
 

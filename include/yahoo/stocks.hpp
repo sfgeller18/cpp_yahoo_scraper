@@ -52,8 +52,9 @@ json stockPacketParser(std::string& packet) {
                 const auto& results = jsonData["chart"]["result"];
                 for (const auto& result : results) {
                     if (result.contains("indicators")) {
-                        const auto& indicators = result["indicators"];
+                        const json& indicators = result["indicators"];
                         std::cout << "Found indicators array: " << std::endl;
+                        if (!indicators["quote"][0].contains("close")) {std::cerr<<"Empty Query :(";}
                     }
                 }
             }

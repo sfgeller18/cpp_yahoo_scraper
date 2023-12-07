@@ -3,7 +3,7 @@
 #include <chrono>
 #include <iomanip> 
 #include <QApplication>
-#include <mainwindow.h>
+#include <UI/mainwindow.h>
 #include <yahoo/stocks.hpp>
 #include <yahoo/options.hpp>
 #include <QString>

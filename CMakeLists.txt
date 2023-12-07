@@ -44,6 +44,7 @@ set_property(SOURCE ${FORMS_DIR}/mainwindow.ui PROPERTY VS_TOOL_OVERRIDE "VCCust
 # Collect source files
 file(GLOB_RECURSE SOURCES
     "${SOURCE_DIR}/*.cpp"
+    "${SOURCE_DIR}/UI/*.cpp"
     "${FORMS_DIR}/*.ui"
     "${INCLUDE_DIR}/*.hpp"
     "${INCLUDE_DIR}/*.h"
