@@ -1,0 +1,49 @@
+# CMake generated files
+/CMakeFiles/
+/CMakeCache.txt
+/CMakeScripts/
+/CMakeScripts/
+/CMakeTmp/
+/*.cmake
+/*.cmake.in
+
+# Compiled object files and libraries
+*.o
+*.a
+*.so
+
+# Compiled executables
+*.exe
+*.out
+
+# Build directories
+/build/
+/out/
+/bin/
+/output
+
+# Generated project files
+*.user
+*.suo
+*.workspace
+
+# NVIDIA CUDA temporary files
+*.ptx
+*.cubin
+*.fatbin
+*.gpu
+
+# Ignore logs, backups, and temporary files
+*.log
+*.bak
+*.swp
+*.swo
+*.tmp
+*~
+
+# Ignore user-specific files
+/home/
+/.vscode/
+/.idea/
+
+.gp
