@@ -13,6 +13,7 @@
 #include <nlohmann/json.hpp>
 #include <timefuncs.hpp>
 #include <csv_funcs.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
 
 using json = nlohmann::json;
 
@@ -107,8 +108,8 @@ void printObj(const json& jsonData, const std::string& filePath) {
     } 
 
 json GetHistoricalPrices(
-        std::string symbol,
-        std::string startDate,
+        const std::string& symbol,
+        const std::string& startDate,
         std::string endDate,
         std::string interval
     ) {
@@ -119,7 +120,7 @@ json GetHistoricalPrices(
         std::string url = "https://query1.finance.yahoo.com/v8/finance/chart/"
                 + symbol
                 + "?symbol="
-                + symbol
+                + boost::to_upper_copy(symbol)
                 + "&period1=" + ss1
                 + "&period2=" + ss2
                 + "&interval=" + interval;
@@ -153,7 +154,7 @@ json GetHistoricalPrices(
 
 void downloadCSV(std::string symbol, std::string period1, std::string period2,std::string interval, std::string filePath = ""){
         json data = GetHistoricalPrices(symbol, period1, period2, interval);
-        if (filePath.empty()) {filePath = "../data/" + symbol + "_historical.csv";}
+        if (filePath.empty()) {filePath = "../data/" + boost::to_upper_copy(symbol) + "_historical.csv";}
         printObj(data, filePath);
         }
 

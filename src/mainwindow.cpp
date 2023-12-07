@@ -4,6 +4,13 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
 
+    ui->dateEdit->setDate(QDate::currentDate());
+    ui->dateEdit_2->setDate(QDate::currentDate());
+    ui->dateEdit_3->setDate(QDate(2023, 12, 8));
+
+    ui->lineEdit_3->setText("1d");
+    
+
     // Connect line edits to slots
     connect(ui->lineEdit_2, &QLineEdit::textChanged, this, &MainWindow::on_lineEdit_2_textChanged);
     connect(ui->lineEdit_3, &QLineEdit::textChanged, this, &MainWindow::on_lineEdit_3_textChanged);

@@ -13,6 +13,8 @@
 #include <nlohmann/json.hpp>
 #include <timefuncs.hpp>
 #include <csv_funcs.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
+
 
 using json = nlohmann::json;
 
@@ -49,7 +51,7 @@ namespace yahoo{
             std::string date = timestamper(origin_date); 
             CURL* curl = curl_easy_init();
 
-            std::string url = "https://query1.finance.yahoo.com/v7/finance/options/" + symbol;
+            std::string url = "https://query1.finance.yahoo.com/v7/finance/options/" + boost::to_upper_copy(symbol);
             url += "?date=" + date;
 
             std::string responseBuffer;
@@ -174,8 +176,8 @@ namespace yahoo{
 
                 std::pair<json, json> data = {json::parse(CPpair.first), json::parse(CPpair.second)};
                 
-                std::string callPath = filePath + "../data/" + ticker + "_call_chain.csv";
-                std::string putPath = filePath + "../data/" + ticker + "_put_chain.csv";
+                std::string callPath = filePath + "../data/" + boost::to_upper_copy(ticker) + "_call_chain.csv";
+                std::string putPath = filePath + "../data/" + boost::to_upper_copy(ticker) + "_put_chain.csv";
 
                 JSONtoCSV(data.first, callPath);
                 JSONtoCSV(data.second, putPath);

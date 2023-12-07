@@ -100,13 +100,12 @@ private:
     // Add QString variables for line edits
     QString ticker;       // Assuming lineEdit_2 is the Ticker      // Assuming lineEdit_7 is the End Date
     QString filePath;     // Assuming lineEdit_11 is the File Path
-    QString interval;
-    QString status;
+    QString interval = "1d";
 
         // Define variables for date edits
-    QDate startDate;
-    QDate endDate;
-    QDate expirationDate;
+    QDate startDate = QDate::currentDate();
+    QDate endDate = QDate::currentDate();
+    QDate expirationDate = QDate(2023, 12, 8);
 
     // Define variables for check boxes
     bool includeCalls;

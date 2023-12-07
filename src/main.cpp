@@ -4,8 +4,8 @@
 #include <iomanip> 
 #include <QApplication>
 #include <mainwindow.h>
-#include <yahoo_stocks.hpp>
-#include <yahoo_options.hpp>
+#include <yahoo/stocks.hpp>
+#include <yahoo/options.hpp>
 
 int main(int argc, char* argv[]) {
 
