@@ -14,6 +14,12 @@
 #include <timefuncs.hpp>
 #include <csv_funcs.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
+#include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
+#include <mongocxx/pool.hpp>
+#include <bsoncxx/json.hpp>
+#include <bsoncxx/stdx/make_unique.hpp>
+#include <bsoncxx/builder/stream/document.hpp>
 
 using json = nlohmann::json;
 
@@ -28,7 +34,7 @@ namespace yahoo {
 
     namespace stockprice {
         const std::unordered_map<std::string, size_t> columnNameToValue = {
-            {"Date", 0},
+            {"Timestamp", 0},
             {"Open", 1},
             {"High", 2},
             {"Low", 3},
@@ -43,77 +49,74 @@ namespace yahoo {
     }
 
 json stockPacketParser(std::string& packet) {
-        json jsonData;
-        try {
-            jsonData = json::parse(packet);
+    json jsonData;
+    json quotes;
+    try {
+        jsonData = json::parse(packet);
 
-            // Access the "indicators" array under "chart" -> "result"
-            if (jsonData.contains("chart") && jsonData["chart"].contains("result")) {
-                const auto& results = jsonData["chart"]["result"];
-                for (const auto& result : results) {
-                    if (result.contains("indicators")) {
-                        const json& indicators = result["indicators"];
-                        std::cout << "Found indicators array: " << std::endl;
-                        if (!indicators["quote"][0].contains("close")) {std::cerr<<"Empty Query :(";}
-                    }
+        // Access the "indicators" array under "chart" -> "result"
+        if (jsonData.contains("chart") && jsonData["chart"].contains("result")) {
+            if (!jsonData["chart"]["result"].empty()) {
+                quotes = jsonData["chart"]["result"][0]["indicators"]["quote"][0];
+
+                // Check if "timestamps" array exists
+                if (jsonData["chart"]["result"][0].contains("timestamp")) {
+                    const json& timestamps = jsonData["chart"]["result"][0]["timestamp"];
+                    quotes["timestamp"] = timestamps;
                 }
             }
-        } catch (const json::parse_error& e) {
-            std::cerr << "JSON parse error: " << e.what() << std::endl;
-    }
-        return jsonData;
+        }
+    } catch (const json::parse_error& e) {
+        std::cerr << "Invalid Query: " << e.what() << std::endl;
     }
 
+    // Return the modified quotes or an empty JSON object
+    return quotes;
+}
 
 
 void printObj(const json& jsonData, const std::string& filePath) {
     std::ofstream csvFile(filePath);
-    if (!csvFile.is_open()) {
-        std::cerr << "Error: Unable to open file for writing: " << filePath << std::endl;
-        return;
-    }
-        csvFile << "close,low,volume,open,high" << std::endl;
-        auto& closeArray = jsonData["chart"]["result"][0]["indicators"]["quote"][0]["close"];
-        auto& lowArray = jsonData["chart"]["result"][0]["indicators"]["quote"][0]["low"];
-        auto& volumeArray = jsonData["chart"]["result"][0]["indicators"]["quote"][0]["volume"];
-        auto& openArray = jsonData["chart"]["result"][0]["indicators"]["quote"][0]["open"];
-        auto& highArray = jsonData["chart"]["result"][0]["indicators"]["quote"][0]["high"];
-
-        // Check if all arrays have the same size
-        size_t arraySize = closeArray.size();
-        if (lowArray.size() != arraySize || volumeArray.size() != arraySize ||
-            openArray.size() != arraySize || highArray.size() != arraySize) {
-            std::cerr << "Error: Arrays in JSON data have different sizes." << std::endl;
-            return;
-
-        }
+    try {
         if (!csvFile.is_open()) {
-            std::cerr << "Error: Unable to open file for writing: output.csv" << std::endl;
-            return;
+            throw std::runtime_error("Error: Unable to open file for writing: " + filePath);
         }
+
+        csvFile << "timestamp, close,low,volume,open,high" << std::endl;
+
+        auto& timestampArray = jsonData["timestamp"];
+        auto& closeArray = jsonData["close"];
+        auto& lowArray = jsonData["low"];
+        auto& volumeArray = jsonData["volume"];
+        auto& openArray = jsonData["open"];
+        auto& highArray = jsonData["high"];
+
+        size_t arraySize = closeArray.size();
 
         // Iterate over indices and print values to the CSV file
         for (size_t i = 0; i < arraySize; ++i) {
-            csvFile << closeArray[i] << ","
+            csvFile << timestampArray[i] << ", " << closeArray[i] << ","
                     << lowArray[i] << ","
-                    << volumeArray[i]<< ","
+                    << volumeArray[i] << ","
                     << openArray[i] << ","
-                    << highArray[i]<< std::endl;
+                    << highArray[i] << std::endl;
         }
 
         // Check for any writing errors
         if (!csvFile.good()) {
-            std::cerr << "Error: Writing to CSV file failed." << std::endl;
-            return;
+            throw std::runtime_error("Error: Writing to CSV file failed.");
         }
-    } 
+    } catch (const std::exception& e) {
+        std::cerr << "Exception caught: " << e.what() << std::endl;
+    } catch (...) {
+        std::cerr << "Unknown exception caught." << std::endl;
+    }
+}
 
-json GetHistoricalPrices(
-        const std::string& symbol,
-        const std::string& startDate,
-        std::string endDate,
-        std::string interval
-    ) {
+
+
+
+json GetHistoricalPrices(const std::string& symbol, const std::string& startDate, std::string endDate, std::string interval) {
 
         if (startDate == endDate) {return json("");}
 
@@ -159,7 +162,81 @@ void downloadCSV(std::string symbol, std::string period1, std::string period2,st
         json data = GetHistoricalPrices(symbol, period1, period2, interval);
         if (filePath.empty()) {filePath = "../data/" + boost::to_upper_copy(symbol) + "_historical.csv";}
         printObj(data, filePath);
+}
+
+void downloadCSVtoCloud(
+    std::string symbol,
+    std::string period1,
+    std::string period2,
+    std::string interval,
+    mongocxx::collection& collection
+) {
+    try {
+        // Get historical prices data
+        json data = GetHistoricalPrices(symbol, period1, period2, interval);
+
+        // Ensure data is not empty
+        if (data.empty()) {
+            std::cerr << "Error: Empty data received." << std::endl;
+            return;
         }
+
+        // Create a BSON document to store historical prices data
+        bsoncxx::builder::stream::document document;
+
+        auto& timestampArray = data["timestamp"];
+        auto& closeArray = data["close"];
+        auto& lowArray = data["low"];
+        auto& volumeArray = data["volume"];
+        auto& openArray = data["open"];
+        auto& highArray = data["high"];
+
+// Create a vector to store the BSON documents
+std::vector<bsoncxx::document::value> documents;
+
+// Iterate over the arrays and add values to the vector of BSON documents
+for (size_t i = 0; i < closeArray.size(); ++i) {
+    try {
+        int64_t timestamp = timestampArray[i].get<int64_t>();
+        double close = closeArray[i].get<double>();
+        double low = lowArray[i].get<double>();
+        double volume = volumeArray[i].get<double>();
+        double open = openArray[i].get<double>();
+        double high = highArray[i].get<double>();
+
+        // Create a BSON document for each entry
+        bsoncxx::builder::stream::document doc;
+        doc << "timestamp" << timestamp
+            << "close" << close
+            << "low" << low
+            << "volume" << volume
+            << "open" << open
+            << "high" << high;
+
+        // Add the BSON document to the vector
+        documents.push_back(doc.extract());
+
+        // Add other fields accordingly
+    } catch (const std::invalid_argument& e) {
+        std::cerr << "Error: Failed to convert string to numeric value. Skipping entry." << std::endl;
+        continue;  // Skip this entry if conversion fails
+    } catch (const std::out_of_range& e) {
+        std::cerr << "Error: Numeric value out of range. Skipping entry." << std::endl;
+        continue;  // Skip this entry if conversion fails
+    }
+}
+
+// Bulk insert the vector of BSON documents into the MongoDB collection
+collection.insert_many(documents);
+
+        std::cout << "Data inserted into MongoDB successfully." << std::endl;
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error in downloadCSVtoCloud: " << e.what() << std::endl;
+    } catch (...) {
+        std::cerr << "Unknown error occurred in downloadCSVtoCloud." << std::endl;
+    }
+}
 
 std::vector<long double> getCol(std::string symbol,
         std::string period1,

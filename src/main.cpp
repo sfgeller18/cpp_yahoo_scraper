@@ -9,10 +9,29 @@
 #include <QString>
 #include <mongo/connect.hpp>
 
+
+//Make argc argv
+
 int main(int argc, char* argv[]) {
 
-    mongocxx::uri uri = mongocxx::uri("mongodb+srv://sfgeller18:7EpoaMnqgB1Cx3RJ@cppyahooscraper.fugbtdd.mongodb.net/?retryWrites=true&w=majority");
-    mongo::connect(uri);
+        mongocxx::instance inst{};
+
+        // Set the version of the Stable API on the client.
+        mongocxx::options::client client_options;
+        const auto api = mongocxx::options::server_api{mongocxx::options::server_api::version::k_version_1};
+        client_options.server_api_opts(api);
+
+        // Setup the connection.
+        mongocxx::uri uri("mongodb+srv://sfgeller18:0TaUq5tN61FzlRjD@cppyahooscraper.fugbtdd.mongodb.net/?retryWrites=true&w=majority");
+        mongocxx::client conn{uri, client_options};
+
+        // Call setup_connection with the connection handle.
+        mongo::setup_connection(conn);
+
+    mongocxx::v_noabi::database db = conn["StockData"];
+    mongocxx::v_noabi::collection stockCollection = db["stockprice"];
+    mongocxx::v_noabi::collection optionCollection = db["options"];
+
 
     std::string successBuffer;
     
@@ -22,20 +41,18 @@ int main(int argc, char* argv[]) {
         timestamp = unixToString(timestamp);
         Qexpirations<<QString::fromStdString(timestamp);
     }
-    for (const QString& date : Qexpirations) {
-    qDebug() << date;
-}
-
 
     QApplication a(argc, argv);
     MainWindow w(Qexpirations);
     w.show();
 
-    QObject::connect(&w, &MainWindow::buttonPushed, [&w]() {
+    QObject::connect(&w, &MainWindow::buttonPushed, [&w, &stockCollection, &optionCollection]() {
         try {
             std::string date1 = ((w.getStartDate()).toString("yyyy-MM-dd")).toStdString();
             std::string date2 = ((w.getEndDate()).toString("yyyy-MM-dd")).toStdString();
+            yahoo::stockprice::downloadCSVtoCloud(w.getTicker().toStdString(), date1, date2, w.getInterval(), stockCollection);
             yahoo::stockprice::downloadCSV(w.getTicker().toStdString(), date1, date2, w.getInterval());
+            yahoo::options::downloadOptionsToCloud(w.getTicker().toStdString(), w.getExpirationDate().toStdString(), optionCollection);
             yahoo::options::downloadCSV(w.getTicker().toStdString(), w.getExpirationDate().toStdString());
         } catch (const std::exception& e) {
             std::cerr << "Error: " << e.what() << std::endl;

@@ -13,7 +13,13 @@
 #include <nlohmann/json.hpp>
 #include <timefuncs.hpp>
 #include <csv_funcs.hpp>
-#include <boost/algorithm/string/case_conv.hpp>
+#include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
+#include <mongocxx/pool.hpp>
+#include <bsoncxx/json.hpp>
+#include <bsoncxx/stdx/make_unique.hpp>
+#include <bsoncxx/builder/stream/document.hpp>
+
 
 
 using json = nlohmann::json;
@@ -99,8 +105,9 @@ namespace yahoo{
             std::string date = timestamper(origin_date); 
             CURL* curl = curl_easy_init();
 
-            std::string url = "https://query1.finance.yahoo.com/v7/finance/options/" + boost::to_upper_copy(symbol);
-            url += "?date=" + date;
+            std::string url = "https://query1.finance.yahoo.com/v7/finance/options/" + boost::to_upper_copy(symbol) + "?date=" + date;
+
+            std::cout<<url<<std::endl;
 
             std::string responseBuffer;
 
@@ -225,7 +232,6 @@ namespace yahoo{
         void downloadCSV(const std::string& ticker, const std::string& date, std::string filePath = "") {
             try {
                 std::string responseBuffer = GetJSON(ticker, date);
-                if responseBuffer
                 parseBuffer(responseBuffer);
                 std::pair<std::string, std::string> CPpair = splitBuffer(responseBuffer);
 
@@ -243,6 +249,94 @@ namespace yahoo{
                 std::cerr << "Unknown error occurred in downloadOptions." << std::endl;
             }
         }
+
+        void processOptionsData(const json& optionsJSON, std::vector<bsoncxx::document::value>& documents) {
+    for (const auto& obj : optionsJSON) {
+        try {
+            // Extract option values
+            std::string contractSymbol = obj.value("contractSymbol", "");
+            double strike = obj.value("strike", 0.0);
+            std::string currency = obj.value("currency", "");
+            double lastPrice = obj.value("lastPrice", 0.0);
+            double change = obj.value("change", 0.0);
+            double percentChange = obj.value("percentChange", 0.0);
+            int volume = obj.value("volume", 0);
+            int openInterest = obj.value("openInterest", 0);
+            double bid = obj.value("bid", 0.0);
+            double ask = obj.value("ask", 0.0);
+            // Add other fields accordingly
+
+            // Create a BSON document for each entry
+            bsoncxx::builder::stream::document doc;
+            doc << "contractSymbol" << contractSymbol
+                << "strike" << strike
+                << "currency" << currency
+                << "lastPrice" << lastPrice
+                << "change" << change
+                << "percentChange" << percentChange
+                << "volume" << volume
+                << "openInterest" << openInterest
+                << "bid" << bid
+                << "ask" << ask;
+            // Add other fields accordingly
+
+            // Add the BSON document to the vector
+            documents.push_back(doc.extract());
+
+        } catch (const std::exception& e) {
+            std::cerr << "Error: Failed to process option entry. Skipping entry." << std::endl;
+            continue;  // Skip this entry if processing fails
+        }
+    }
+}
+
+// Function to get options data as a pair of JSON objects (call and put options)
+std::pair<json, json> GetOptionsData(const std::string& symbol, const std::string& date) {
+    std::string jsonResponse = GetJSON(symbol, date);
+
+    // Parse JSON response and split into call and put options
+    parseBuffer(jsonResponse);
+    std::pair<std::string, std::string> CPpair = splitBuffer(jsonResponse);
+
+    return {json::parse(CPpair.first), json::parse(CPpair.second)};
+}
+
+    void downloadOptionsToCloud(
+    std::string symbol,
+    std::string date,
+    mongocxx::collection& collection
+) {
+    try {
+        // Download options data
+        std::pair<json, json> optionsData = GetOptionsData(symbol, date);
+
+        // Ensure data is not empty
+        if (optionsData.first.empty() || optionsData.second.empty()) {
+            std::cerr << "Error: Empty options data received." << std::endl;
+            return;
+        }
+
+        // Create a vector to store the BSON documents
+        std::vector<bsoncxx::document::value> documents;
+
+        // Iterate over call options and add values to the vector of BSON documents
+        processOptionsData(optionsData.first, documents);
+
+        // Iterate over put options and add values to the vector of BSON documents
+        processOptionsData(optionsData.second, documents);
+
+        // Bulk insert the vector of BSON documents into the MongoDB collection
+        collection.insert_many(documents);
+
+        std::cout << "Options data inserted into MongoDB successfully." << std::endl;
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error in downloadOptionsToCloud: " << e.what() << std::endl;
+    } catch (...) {
+        std::cerr << "Unknown error occurred in downloadOptionsToCloud." << std::endl;
+    }
+}
+
     }
 }
 
