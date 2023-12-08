@@ -218,7 +218,7 @@ namespace yahoo{
                 if (!csvFile.is_open()) {
                     throw std::runtime_error("Error: Unable to open file for writing.");
                 }
-                csvFile << "contractSymbol,strike,currency,lastPrice,change,percentChange,volume,openInterest,bid,ask,contractSize,expiration,lastTradeDate,impliedVolatility,inTheMoney" << std::endl;
+                csvFile << "contractSymbol,strike,currency,lastPrice,change,percentChange,volume,openInterest,bid,ask,lastTradeDate,impliedVolatility,inTheMoney" << std::endl;
                 printObj(data, csvFile);
             csvFile.close();
             std::cout << "Data successfully saved to CSV" << std::endl;
@@ -250,47 +250,7 @@ namespace yahoo{
             }
         }
 
-        void processOptionsData(const json& optionsJSON, std::vector<bsoncxx::document::value>& documents) {
-    for (const auto& obj : optionsJSON) {
-        try {
-            // Extract option values
-            std::string contractSymbol = obj.value("contractSymbol", "");
-            double strike = obj.value("strike", 0.0);
-            std::string currency = obj.value("currency", "");
-            double lastPrice = obj.value("lastPrice", 0.0);
-            double change = obj.value("change", 0.0);
-            double percentChange = obj.value("percentChange", 0.0);
-            int volume = obj.value("volume", 0);
-            int openInterest = obj.value("openInterest", 0);
-            double bid = obj.value("bid", 0.0);
-            double ask = obj.value("ask", 0.0);
-            // Add other fields accordingly
 
-            // Create a BSON document for each entry
-            bsoncxx::builder::stream::document doc;
-            doc << "contractSymbol" << contractSymbol
-                << "strike" << strike
-                << "currency" << currency
-                << "lastPrice" << lastPrice
-                << "change" << change
-                << "percentChange" << percentChange
-                << "volume" << volume
-                << "openInterest" << openInterest
-                << "bid" << bid
-                << "ask" << ask;
-            // Add other fields accordingly
-
-            // Add the BSON document to the vector
-            documents.push_back(doc.extract());
-
-        } catch (const std::exception& e) {
-            std::cerr << "Error: Failed to process option entry. Skipping entry." << std::endl;
-            continue;  // Skip this entry if processing fails
-        }
-    }
-}
-
-// Function to get options data as a pair of JSON objects (call and put options)
 std::pair<json, json> GetOptionsData(const std::string& symbol, const std::string& date) {
     std::string jsonResponse = GetJSON(symbol, date);
 
@@ -301,34 +261,100 @@ std::pair<json, json> GetOptionsData(const std::string& symbol, const std::strin
     return {json::parse(CPpair.first), json::parse(CPpair.second)};
 }
 
+void buildBSON(const json& optionsData, bsoncxx::builder::stream::document& optionsDoc) {
+
+    auto contractSymbolArrayBuilder = bsoncxx::builder::basic::array{};
+    auto strikeArrayBuilder = bsoncxx::builder::basic::array{};
+    auto currencyArrayBuilder = bsoncxx::builder::basic::array{};
+    auto lastPriceArrayBuilder = bsoncxx::builder::basic::array{};
+    auto changeArrayBuilder = bsoncxx::builder::basic::array{};
+    auto percentChangeArrayBuilder = bsoncxx::builder::basic::array{};
+    auto volumeArrayBuilder = bsoncxx::builder::basic::array{};
+    auto openInterestArrayBuilder = bsoncxx::builder::basic::array{};
+    auto bidArrayBuilder = bsoncxx::builder::basic::array{};
+    auto askArrayBuilder = bsoncxx::builder::basic::array{};
+    auto IVArrayBuilder = bsoncxx::builder::basic::array{};
+
+
+    // Iterate over the options data and add values to the arrays
+    for (const auto& obj : optionsData) {
+        try {
+            std::string contractSymbol = obj.value("contractSymbol", "");
+            double strike = obj.value("strike", 0.0);
+            std::string currency = obj.value("currency", "");
+            double lastPrice = obj.value("lastPrice", 0.0);
+            double change = obj.value("change", 0.0);
+            double percentChange = obj.value("percentChange", 0.0);
+            int volume = obj.value("volume", 0);
+            int openInterest = obj.value("openInterest", 0);
+            double bid = obj.value("bid", 0.0);
+            double ask = obj.value("ask", 0.0);
+            double implied = obj.value("impliedVolatility", 0.0);
+
+
+            // Append values to the arrays
+            contractSymbolArrayBuilder.append(bsoncxx::types::b_utf8{contractSymbol});
+            strikeArrayBuilder.append(bsoncxx::types::b_double{strike});
+            currencyArrayBuilder.append(bsoncxx::types::b_utf8{currency});
+            lastPriceArrayBuilder.append(bsoncxx::types::b_double{lastPrice});
+            changeArrayBuilder.append(bsoncxx::types::b_double{change});
+            percentChangeArrayBuilder.append(bsoncxx::types::b_double{percentChange});
+            volumeArrayBuilder.append(bsoncxx::types::b_int32{volume});
+            openInterestArrayBuilder.append(bsoncxx::types::b_int32{openInterest});
+            bidArrayBuilder.append(bsoncxx::types::b_double{bid});
+            askArrayBuilder.append(bsoncxx::types::b_double{ask});
+            IVArrayBuilder.append(bsoncxx::types::b_double{implied});
+
+            // Add other fields accordingly
+        } catch (const std::exception& e) {
+            std::cerr << "Error: Failed to process option entry. Skipping entry." << std::endl;
+            continue;  // Skip this entry if processing fails
+        }
+    }
+
+    try {
+
+        // Append arrays to the BSON document
+        optionsDoc << "contractSymbol" << contractSymbolArrayBuilder
+                   << "strike" << strikeArrayBuilder
+                   << "currency" << currencyArrayBuilder
+                   << "lastPrice" << lastPriceArrayBuilder
+                   << "change" << changeArrayBuilder
+                   << "percentChange" << percentChangeArrayBuilder
+                   << "volume" << volumeArrayBuilder
+                   << "openInterest" << openInterestArrayBuilder
+                   << "bid" << bidArrayBuilder
+                   << "ask" << askArrayBuilder
+                   << "ImpliedVol" <<IVArrayBuilder;
+    } catch (const std::exception& e) {
+        std::cerr << "Error: Failed to enter data to BSON Doc" << std::endl;
+    }
+}
+
     void downloadOptionsToCloud(
     std::string symbol,
     std::string date,
     mongocxx::collection& collection
 ) {
     try {
-        // Download options data
         std::pair<json, json> optionsData = GetOptionsData(symbol, date);
-
-        // Ensure data is not empty
         if (optionsData.first.empty() || optionsData.second.empty()) {
             std::cerr << "Error: Empty options data received." << std::endl;
             return;
         }
 
-        // Create a vector to store the BSON documents
-        std::vector<bsoncxx::document::value> documents;
+        bsoncxx::builder::stream::document callDoc;
+        bsoncxx::builder::stream::document putDoc;
 
-        // Iterate over call options and add values to the vector of BSON documents
-        processOptionsData(optionsData.first, documents);
+        try {
+            buildBSON(optionsData.first, callDoc);   
+            collection.insert_one(callDoc.view());      
+            std::cout << "Call data successfully saved to MongoDB" << std::endl;} catch (const std::exception& e) {std::cout<<"Call data failed insertion into DB"<<std::endl;}
+                try {
+            buildBSON(optionsData.second, putDoc);        
+            collection.insert_one(putDoc.view());                  
+            std::cout << "Put data successfully saved to MongoDB" << std::endl;} catch (const std::exception& e) {std::cout<<"Put data failed insertion into DB"<<std::endl;}
 
-        // Iterate over put options and add values to the vector of BSON documents
-        processOptionsData(optionsData.second, documents);
-
-        // Bulk insert the vector of BSON documents into the MongoDB collection
-        collection.insert_many(documents);
-
-        std::cout << "Options data inserted into MongoDB successfully." << std::endl;
 
     } catch (const std::exception& e) {
         std::cerr << "Error in downloadOptionsToCloud: " << e.what() << std::endl;

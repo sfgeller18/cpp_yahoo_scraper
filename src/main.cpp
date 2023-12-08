@@ -51,9 +51,7 @@ int main(int argc, char* argv[]) {
             std::string date1 = ((w.getStartDate()).toString("yyyy-MM-dd")).toStdString();
             std::string date2 = ((w.getEndDate()).toString("yyyy-MM-dd")).toStdString();
             yahoo::stockprice::downloadCSVtoCloud(w.getTicker().toStdString(), date1, date2, w.getInterval(), stockCollection);
-            yahoo::stockprice::downloadCSV(w.getTicker().toStdString(), date1, date2, w.getInterval());
             yahoo::options::downloadOptionsToCloud(w.getTicker().toStdString(), w.getExpirationDate().toStdString(), optionCollection);
-            yahoo::options::downloadCSV(w.getTicker().toStdString(), w.getExpirationDate().toStdString());
         } catch (const std::exception& e) {
             std::cerr << "Error: " << e.what() << std::endl;
             std::cerr << "Incorrect query" << std::endl;

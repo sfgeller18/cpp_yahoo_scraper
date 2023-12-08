@@ -110,7 +110,7 @@ private:
     QString interval = "1d";
     QComboBox *comboBox;
 
-    QString expirationDate;
+    QString expirationDate = QDate(2023,12,8).toString("yyyy-MM-dd");
     QComboBox *comboBox_2;
 
         // Define variables for date edit

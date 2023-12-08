@@ -193,7 +193,7 @@ bsoncxx::builder::stream::document document;
 
 // Create arrays for each label
 auto nameArrayBuilder = bsoncxx::builder::basic::array{};
-nameArrayBuilder.append(symbol);
+nameArrayBuilder.append(boost::to_upper_copy(symbol));
 nameArrayBuilder.append(period1);
 nameArrayBuilder.append(period2);
 nameArrayBuilder.append(interval);
