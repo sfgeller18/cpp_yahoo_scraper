@@ -16,7 +16,7 @@ MainWindow::MainWindow(const QStringList& expirationDates, QWidget *parent) : QM
     layout->addWidget(comboBox_2);
 
     comboBox->addItems({"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"});
-    ui->comboBox_2->addItems(expirationDates);
+    comboBox_2->addItems(expirationDates);
 
     comboBox->setGeometry(180, 230, 111, 22);
     comboBox_2->setGeometry(540, 150, 111, 22);

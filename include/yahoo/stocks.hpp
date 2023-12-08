@@ -181,9 +181,6 @@ void downloadCSVtoCloud(
             return;
         }
 
-        // Create a BSON document to store historical prices data
-        bsoncxx::builder::stream::document document;
-
         auto& timestampArray = data["timestamp"];
         auto& closeArray = data["close"];
         auto& lowArray = data["low"];
@@ -191,11 +188,26 @@ void downloadCSVtoCloud(
         auto& openArray = data["open"];
         auto& highArray = data["high"];
 
-// Create a vector to store the BSON documents
-std::vector<bsoncxx::document::value> documents;
+        // Create a BSON document to store historical prices data
+bsoncxx::builder::stream::document document;
 
-// Iterate over the arrays and add values to the vector of BSON documents
+// Create arrays for each label
+auto nameArrayBuilder = bsoncxx::builder::basic::array{};
+nameArrayBuilder.append(symbol);
+nameArrayBuilder.append(period1);
+nameArrayBuilder.append(period2);
+nameArrayBuilder.append(interval);
+
+auto timestampArrayBuilder = bsoncxx::builder::basic::array{};
+auto closeArrayBuilder = bsoncxx::builder::basic::array{};
+auto lowArrayBuilder = bsoncxx::builder::basic::array{};
+auto volumeArrayBuilder = bsoncxx::builder::basic::array{};
+auto openArrayBuilder = bsoncxx::builder::basic::array{};
+auto highArrayBuilder = bsoncxx::builder::basic::array{};
+
+// Iterate over the arrays and add values to the arrays
 for (size_t i = 0; i < closeArray.size(); ++i) {
+    bool errorFlag = false;
     try {
         int64_t timestamp = timestampArray[i].get<int64_t>();
         double close = closeArray[i].get<double>();
@@ -204,38 +216,44 @@ for (size_t i = 0; i < closeArray.size(); ++i) {
         double open = openArray[i].get<double>();
         double high = highArray[i].get<double>();
 
-        // Create a BSON document for each entry
-        bsoncxx::builder::stream::document doc;
-        doc << "timestamp" << timestamp
-            << "close" << close
-            << "low" << low
-            << "volume" << volume
-            << "open" << open
-            << "high" << high;
-
-        // Add the BSON document to the vector
-        documents.push_back(doc.extract());
+        // Append values to the arrays
+        timestampArrayBuilder.append(bsoncxx::types::b_int64{timestamp});
+        closeArrayBuilder.append(bsoncxx::types::b_double{close});
+        lowArrayBuilder.append(bsoncxx::types::b_double{low});
+        volumeArrayBuilder.append(bsoncxx::types::b_double{volume});
+        openArrayBuilder.append(bsoncxx::types::b_double{open});
+        highArrayBuilder.append(bsoncxx::types::b_double{high});
 
         // Add other fields accordingly
     } catch (const std::invalid_argument& e) {
         std::cerr << "Error: Failed to convert string to numeric value. Skipping entry." << std::endl;
-        continue;  // Skip this entry if conversion fails
+        errorFlag = true;
     } catch (const std::out_of_range& e) {
         std::cerr << "Error: Numeric value out of range. Skipping entry." << std::endl;
-        continue;  // Skip this entry if conversion fails
+        errorFlag = true;
     }
+    if (errorFlag == true) {continue;} //Skip to next numeric value on conversion failure
 }
 
-// Bulk insert the vector of BSON documents into the MongoDB collection
-collection.insert_many(documents);
+// Add the arrays to the main document
+document << "ID:" << nameArrayBuilder
+         << "timestamp" << timestampArrayBuilder
+         << "close" << closeArrayBuilder
+         << "low" << lowArrayBuilder
+         << "volume" << volumeArrayBuilder
+         << "open" << openArrayBuilder
+         << "high" << highArrayBuilder;
 
-        std::cout << "Data inserted into MongoDB successfully." << std::endl;
+// Insert the BSON document into the MongoDB collection
+collection.insert_one(document.view());
 
-    } catch (const std::exception& e) {
-        std::cerr << "Error in downloadCSVtoCloud: " << e.what() << std::endl;
-    } catch (...) {
-        std::cerr << "Unknown error occurred in downloadCSVtoCloud." << std::endl;
-    }
+std::cout << "Data inserted into MongoDB successfully." << std::endl;
+
+    } catch (const std::invalid_argument& e) {
+        std::cerr << "Error: Failed to convert string to numeric value. Skipping entry." << std::endl;
+    } catch (const std::out_of_range& e) {
+        std::cerr << "Error: Numeric value out of range. Skipping entry." << std::endl;
+    } 
 }
 
 std::vector<long double> getCol(std::string symbol,
