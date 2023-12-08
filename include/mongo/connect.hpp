@@ -1,3 +1,8 @@
+#ifndef CONNECT_H
+#define CONNECT_H
+
+#define QT_NO_DEBUG_OUTPUT
+
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
@@ -18,4 +23,6 @@ void setup_connection(const mongocxx::client& conn) {
         std::cout << "Exception: " << e.what() << std::endl;
     }
 }
-}
+};
+
+#endif

@@ -7,6 +7,7 @@
 #include <QDateEdit>
 #include <QCheckBox>
 #include <QVBoxLayout>
+#include <QString>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -68,6 +69,7 @@ void setButtonPushed(bool value);
     void setIncludeAdj(bool value);
 
     std::string getInterval() const;
+    void setError(const QString& errorBuffer);
 
 signals:
     void buttonPushed();

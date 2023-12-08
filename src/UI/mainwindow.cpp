@@ -68,6 +68,11 @@ void MainWindow::on_lineEdit_11_textChanged(const QString &text) {
     filePath = text;
 }
 
+void MainWindow::setError(const QString& errorBuffer) {
+    ui->lineEdit->setText(errorBuffer);
+}
+
+
 // Implement new slots
 void MainWindow::on_dateEdit_startDate_dateChanged(const QDate &date) {
     endDate = date;

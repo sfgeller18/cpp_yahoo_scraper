@@ -1,6 +1,8 @@
 #ifndef YAHOO_STOCKS_H
 #define YAHOO_STOCKS_H
 
+#define QT_NO_DEBUG_OUTPUT
+
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -48,7 +50,7 @@ namespace yahoo {
         return (it != columnNameToValue.end()) ? it->second : (std::cerr << "Invalid column name: " << columnName << std::endl, -1);
     }
 
-json stockPacketParser(std::string& packet) {
+json stockPacketParser(std::string& packet,std::string errorBuffer) {
     json jsonData;
     json quotes;
     try {
@@ -67,7 +69,7 @@ json stockPacketParser(std::string& packet) {
             }
         }
     } catch (const json::parse_error& e) {
-        std::cerr << "Invalid Query: " << e.what() << std::endl;
+        errorBuffer = "Invalid Query: " + std::string(e.what());
     }
 
     // Return the modified quotes or an empty JSON object
@@ -75,7 +77,7 @@ json stockPacketParser(std::string& packet) {
 }
 
 
-void printObj(const json& jsonData, const std::string& filePath) {
+void printObj(const json& jsonData, const std::string& filePath, std::string errorBuffer) {
     std::ofstream csvFile(filePath);
     try {
         if (!csvFile.is_open()) {
@@ -105,18 +107,19 @@ void printObj(const json& jsonData, const std::string& filePath) {
         // Check for any writing errors
         if (!csvFile.good()) {
             throw std::runtime_error("Error: Writing to CSV file failed.");
+            errorBuffer = "Error: Writing to CSV file failed.";
         }
     } catch (const std::exception& e) {
-        std::cerr << "Exception caught: " << e.what() << std::endl;
+         errorBuffer = "Exception caught: " + std::string(e.what()); 
     } catch (...) {
-        std::cerr << "Unknown exception caught." << std::endl;
+        errorBuffer = "Unknown Exception caught in printObj "; 
     }
 }
 
 
 
 
-json GetHistoricalPrices(const std::string& symbol, const std::string& startDate, std::string endDate, std::string interval) {
+json GetHistoricalPrices(const std::string& symbol, const std::string& startDate, std::string endDate, std::string interval, std::string& errorBuffer) {
 
         if (startDate == endDate) {return json("");}
 
@@ -146,22 +149,25 @@ json GetHistoricalPrices(const std::string& symbol, const std::string& startDate
             // Perform the request
             CURLcode res = curl_easy_perform(curl);
             if (res != CURLE_OK) {
-                std::cerr << "Error in curl_easy_perform: " << curl_easy_strerror(res) << std::endl;
+                errorBuffer = "Error in curl_easy_perform: " + std::string(curl_easy_strerror(res));
                 // Handle the error, possibly by returning an empty string or throwing an exception
                 curl_easy_cleanup(curl);
                 return "";
             }
             // Cleanup
             curl_easy_cleanup(curl);
-            return stockPacketParser(responseBuffer);
+            return stockPacketParser(responseBuffer, errorBuffer);
         }
 
     } 
 
-void downloadCSV(std::string symbol, std::string period1, std::string period2,std::string interval, std::string filePath = ""){
-        json data = GetHistoricalPrices(symbol, period1, period2, interval);
+void downloadCSV(std::string& symbol, std::string& period1, std::string& period2,std::string& interval, std::string& errorBuffer, std::string filePath = ""){
+    while (errorBuffer == "") {
+        json data = GetHistoricalPrices(symbol, period1, period2, interval, errorBuffer);
         if (filePath.empty()) {filePath = "../data/" + boost::to_upper_copy(symbol) + "_historical.csv";}
-        printObj(data, filePath);
+        printObj(data, filePath, errorBuffer);
+    }
+    if (errorBuffer!="") {return;}
 }
 
 void downloadCSVtoCloud(
@@ -169,17 +175,18 @@ void downloadCSVtoCloud(
     std::string period1,
     std::string period2,
     std::string interval,
-    mongocxx::collection& collection
+    mongocxx::collection& collection, std::string& errorBuffer
 ) {
     try {
         // Get historical prices data
-        json data = GetHistoricalPrices(symbol, period1, period2, interval);
+        json data = GetHistoricalPrices(symbol, period1, period2, interval, errorBuffer);
 
         // Ensure data is not empty
         if (data.empty()) {
-            std::cerr << "Error: Empty data received." << std::endl;
+            errorBuffer += "Error: Empty data received.";
             return;
         }
+        if (errorBuffer != "") {return;}
 
         auto& timestampArray = data["timestamp"];
         auto& closeArray = data["close"];
@@ -226,7 +233,7 @@ for (size_t i = 0; i < closeArray.size(); ++i) {
 
         // Add other fields accordingly
     } catch (const std::invalid_argument& e) {
-        std::cerr << "Error: Failed to convert string to numeric value. Skipping entry." << std::endl;
+        errorBuffer += "Error: Failed to convert string to numeric value. Skipping entry.";
         errorFlag = true;
     } catch (const std::out_of_range& e) {
         std::cerr << "Error: Numeric value out of range. Skipping entry." << std::endl;
@@ -250,18 +257,20 @@ collection.insert_one(document.view());
 std::cout << "Data inserted into MongoDB successfully." << std::endl;
 
     } catch (const std::invalid_argument& e) {
-        std::cerr << "Error: Failed to convert string to numeric value. Skipping entry." << std::endl;
+        errorBuffer += "Error: Failed to convert string to numeric value. Skipping entry.";
+        return;
     } catch (const std::out_of_range& e) {
-        std::cerr << "Error: Numeric value out of range. Skipping entry." << std::endl;
+        errorBuffer += "Error: Numeric value out of range. Skipping entry.";
+        return;
     } 
 }
 
 std::vector<long double> getCol(std::string symbol,
         std::string period1,
         std::string period2,
-        std::string interval, std::string colName
+        std::string interval, std::string colName, std::string errorBuffer
         ) {
-            std::string responseBuffer = GetHistoricalPrices(symbol, period1, period2, interval);
+            std::string responseBuffer = GetHistoricalPrices(symbol, period1, period2, interval, errorBuffer);
             std::istringstream bufferStream(responseBuffer);
             std::vector<long double> closeValues;
             size_t n = index(colName);
@@ -284,7 +293,7 @@ std::vector<long double> getCol(std::string symbol,
                 // Extract the Close value and convert it to double
                 std::getline(lineStream, token, ',');
                 try {closeValues.push_back(std::stold(token));} catch (const std::invalid_argument& e) {
-                    std::cerr << "Invalid argument: " << e.what() << std::endl;
+                    std::cerr << "Invalid argument: " << std::string(e.what()) << std::endl;
                 }
             }
             return closeValues;
