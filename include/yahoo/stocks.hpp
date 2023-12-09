@@ -22,6 +22,7 @@
 #include <bsoncxx/json.hpp>
 #include <bsoncxx/stdx/make_unique.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
+#include <filesystem>
 
 using json = nlohmann::json;
 
@@ -127,7 +128,7 @@ json GetHistoricalPrices(const std::string& symbol, const std::string& startDate
         std::string ss2 = timestamper(endDate); 
         
         std::string url = "https://query1.finance.yahoo.com/v8/finance/chart/"
-                + symbol
+                + boost::to_upper_copy(symbol)
                 + "?symbol="
                 + boost::to_upper_copy(symbol)
                 + "&period1=" + ss1
@@ -161,13 +162,11 @@ json GetHistoricalPrices(const std::string& symbol, const std::string& startDate
 
     } 
 
-void downloadCSV(std::string& symbol, std::string& period1, std::string& period2,std::string& interval, std::string& errorBuffer, std::string filePath = ""){
-    while (errorBuffer == "") {
+void downloadCSV(const std::string& symbol, const std::string& period1, const std::string& period2, const std::string& interval, std::string& errorBuffer, std::string filePath = ""){
+        if (filePath.empty()) {filePath = "../data/" + boost::to_upper_copy(symbol)+ period1 + "_"+ period2 + "_"+ interval+".csv";}
         json data = GetHistoricalPrices(symbol, period1, period2, interval, errorBuffer);
-        if (filePath.empty()) {filePath = "../data/" + boost::to_upper_copy(symbol) + "_historical.csv";}
+        if (errorBuffer!="") {return;}
         printObj(data, filePath, errorBuffer);
-    }
-    if (errorBuffer!="") {return;}
 }
 
 void downloadCSVtoCloud(

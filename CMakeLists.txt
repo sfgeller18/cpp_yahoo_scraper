@@ -5,7 +5,6 @@ project(Query)
 set(CMAKE_CXX_STANDARD 20)
 
 find_package(mongocxx REQUIRED)
-find_package(Protobuf REQUIRED)
 
 execute_process(
     COMMAND pkg-config --cflags --libs libmongocxx
@@ -15,8 +14,6 @@ execute_process(
 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MONGOCXX_FLAGS}")
-set(PROTO_FILE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include/proto")
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILE_PATH})
 
 # Find and configure Qt
 set(CMAKE_AUTOUIC ON)
@@ -54,5 +51,8 @@ file(GLOB_RECURSE SOURCES
 
 add_executable(query ${SOURCES})
 
-# Link against libcurl and Qt::Widgets
-target_link_libraries(query PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${CURL_LIBRARIES} mongocxx bsoncxx protobuf::libprotobuf)
+# Link against libcurl and Qt::Widgetsproto
+target_link_libraries(query PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${CURL_LIBRARIES} mongocxx bsoncxx)
+
+
+

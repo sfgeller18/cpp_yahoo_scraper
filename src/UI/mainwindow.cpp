@@ -2,7 +2,7 @@
 #include "ui_mainwindow.h"
 
 
-MainWindow::MainWindow(const QStringList& expirationDates, QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
+MainWindow::MainWindow(const QStringList& expirationDates, QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow), expirationDate(expirationDates.isEmpty() ? QString() : expirationDates.first()) {
     ui->setupUi(this);
 
     ui->dateEdit->setDate(QDate::currentDate());
@@ -23,26 +23,32 @@ MainWindow::MainWindow(const QStringList& expirationDates, QWidget *parent) : QM
 
 
     // Connect line edits to slots
-    connect(ui->lineEdit_2, &QLineEdit::textChanged, this, &MainWindow::on_lineEdit_2_textChanged);
-    connect(ui->lineEdit_11, &QLineEdit::textChanged, this, &MainWindow::on_lineEdit_11_textChanged);
-    connect(comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onComboBoxIntervalChanged);
-    connect(comboBox_2, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onComboBoxExpirationChanged);
+    // Change the connections
+// Connect QLineEdit signals to slots
+connect(ui->lineEdit_2, &QLineEdit::textChanged, this, &MainWindow::on_lineEdit_2_textChanged);
+connect(ui->lineEdit_11, &QLineEdit::textChanged, this, &MainWindow::on_lineEdit_11_textChanged);
 
-    // Connect date edits to slots
-    connect(ui->dateEdit, &QDateEdit::dateChanged, this, &MainWindow::on_dateEdit_startDate_dateChanged);
-    connect(ui->dateEdit_2, &QDateEdit::dateChanged, this, &MainWindow::on_dateEdit_endDate_dateChanged);
+// Connect QComboBox signals to slots
+connect(comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onComboBoxIntervalChanged);
+connect(comboBox_2, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onComboBoxExpirationChanged);
 
-    connect(ui->checkBox_3, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_open_stateChanged);
-    connect(ui->checkBox_4, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_high_stateChanged);
-    connect(ui->checkBox_5, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_low_stateChanged);
-    connect(ui->checkBox_6, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_close_stateChanged);
-    connect(ui->checkBox_7, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_adj_stateChanged);
-    connect(ui->checkBox_8, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_volume_stateChanged);
+// Connect QDateEdit signals to slots
+connect(ui->dateEdit, &QDateEdit::dateChanged, this, &MainWindow::on_dateEdit_startDateDateChanged);
+connect(ui->dateEdit_2, &QDateEdit::dateChanged, this, &MainWindow::on_dateEdit_endDateDateChanged);
+
+// Connect QCheckBox signals to slots
+connect(ui->checkBox_3, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_openStateChanged);
+connect(ui->checkBox_4, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_highStateChanged);
+connect(ui->checkBox_5, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_lowStateChanged);
+connect(ui->checkBox_6, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_closeStateChanged);
+connect(ui->checkBox_7, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_adjStateChanged);
+connect(ui->checkBox_8, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_volumeStateChanged);
+
+// Connect additional QCheckBox signals to slots
+connect(ui->checkBox, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_callsStateChanged);
+connect(ui->checkBox_2, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_putsStateChanged);
 
 
-    // Connect check boxes to slots
-    connect(ui->checkBox, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_calls_stateChanged);
-    connect(ui->checkBox_2, &QCheckBox::stateChanged, this, &MainWindow::on_checkBox_puts_stateChanged);
 }
 
 MainWindow::~MainWindow() {
@@ -56,11 +62,12 @@ void MainWindow::on_lineEdit_2_textChanged(const QString &text) {
 void MainWindow::onComboBoxIntervalChanged(const int& index)
 {
         interval = comboBox->itemText(index);
+        qDebug() << "Selected Interval: " << interval;
 }
 
 void MainWindow::onComboBoxExpirationChanged(const int& index)
 {
-        expirationDate = comboBox->itemText(index);
+        expirationDate = comboBox_2->itemText(index);
         qDebug() << "Selected Interval: " << expirationDate;
 }
 
@@ -74,19 +81,19 @@ void MainWindow::setError(const QString& errorBuffer) {
 
 
 // Implement new slots
-void MainWindow::on_dateEdit_startDate_dateChanged(const QDate &date) {
+void MainWindow::on_dateEdit_startDateDateChanged(const QDate &date) {
     endDate = date;
 }
 
-void MainWindow::on_dateEdit_endDate_dateChanged(const QDate &date) {
+void MainWindow::on_dateEdit_endDateDateChanged(const QDate &date) {
     startDate = date;
 }
 
-void MainWindow::on_checkBox_calls_stateChanged(int state) {
+void MainWindow::on_checkBox_callsStateChanged(int state) {
     includeCalls = state == Qt::Checked;
 }
 
-void MainWindow::on_checkBox_puts_stateChanged(int state) {
+void MainWindow::on_checkBox_putsStateChanged(int state) {
     includePuts = state == Qt::Checked;
 }
 
@@ -212,32 +219,32 @@ void MainWindow::setIncludeAdj(bool value)
     stocksInclude[5] = value;
 }
 
-void MainWindow::on_checkBox_open_stateChanged(int state)
+void MainWindow::on_checkBox_openStateChanged(int state)
 {
     setIncludeOpen(state == Qt::Checked);
 }
 
-void MainWindow::on_checkBox_close_stateChanged(int state)
+void MainWindow::on_checkBox_closeStateChanged(int state)
 {
     setIncludeClose(state == Qt::Checked);
 }
 
-void MainWindow::on_checkBox_high_stateChanged(int state)
+void MainWindow::on_checkBox_highStateChanged(int state)
 {
     setIncludeHigh(state == Qt::Checked);
 }
 
-void MainWindow::on_checkBox_low_stateChanged(int state)
+void MainWindow::on_checkBox_lowStateChanged(int state)
 {
     setIncludeLow(state == Qt::Checked);
 }
 
-void MainWindow::on_checkBox_volume_stateChanged(int state)
+void MainWindow::on_checkBox_volumeStateChanged(int state)
 {
     setIncludeVolume(state == Qt::Checked);
 }
 
-void MainWindow::on_checkBox_adj_stateChanged(int state)
+void MainWindow::on_checkBox_adjStateChanged(int state)
 {
     setIncludeAdj(state == Qt::Checked);
 }

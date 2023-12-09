@@ -76,7 +76,7 @@ signals:
 
 private slots:
     // Add slots for line edits
-    void on_lineEdit_2_textChanged(const QString &text);
+    void on_lineEdit_2textChanged(const QString &text);
     void on_lineEdit_11_textChanged(const QString &text);
     
     void onComboBoxIntervalChanged(const int& index);
@@ -84,19 +84,19 @@ private slots:
 
 
         // Add slots for date edits
-    void on_dateEdit_startDate_dateChanged(const QDate &date);
-    void on_dateEdit_endDate_dateChanged(const QDate &date);
+void on_dateEdit_startDateDateChanged(const QDate &date);
+void on_dateEdit_endDateDateChanged(const QDate &date);
 
-    // Add slots for check boxes
-    void on_checkBox_calls_stateChanged(int state);
-    void on_checkBox_puts_stateChanged(int state);
+void on_checkBox_callsStateChanged(int state);
+void on_checkBox_putsStateChanged(int state);
 
-    void on_checkBox_open_stateChanged(int state);
-    void on_checkBox_close_stateChanged(int state);
-    void on_checkBox_high_stateChanged(int state);
-    void on_checkBox_low_stateChanged(int state);
-    void on_checkBox_volume_stateChanged(int state);
-    void on_checkBox_adj_stateChanged(int state);
+void on_checkBox_openStateChanged(int state);
+void on_checkBox_closeStateChanged(int state);
+void on_checkBox_highStateChanged(int state);
+void on_checkBox_lowStateChanged(int state);
+void on_checkBox_volumeStateChanged(int state);
+void on_checkBox_adjStateChanged(int state);
+
 
     void on_pushButton_clicked(); 
     
@@ -109,10 +109,10 @@ private:
     QString ticker;       // Assuming lineEdit_2 is the Ticker      // Assuming lineEdit_7 is the End Date
     QString filePath;     // Assuming lineEdit_11 is the File Path
 
-    QString interval = "1d";
+    QString interval = "1m";
     QComboBox *comboBox;
 
-    QString expirationDate = QDate(2023,12,8).toString("yyyy-MM-dd");
+    QString expirationDate;
     QComboBox *comboBox_2;
 
         // Define variables for date edit
