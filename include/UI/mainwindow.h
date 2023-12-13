@@ -76,7 +76,7 @@ signals:
 
 private slots:
     // Add slots for line edits
-    void on_lineEdit_2textChanged(const QString &text);
+    void on_lineEdit_2_textChanged(const QString &text);
     void on_lineEdit_11_textChanged(const QString &text);
     
     void onComboBoxIntervalChanged(const int& index);

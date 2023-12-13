@@ -12,6 +12,7 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
+add_subdirectory(external/time_series)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MONGOCXX_FLAGS}")
 
@@ -51,8 +52,6 @@ file(GLOB_RECURSE SOURCES
 
 add_executable(query ${SOURCES})
 
-# Link against libcurl and Qt::Widgetsproto
 target_link_libraries(query PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${CURL_LIBRARIES} mongocxx bsoncxx)
-
 
 
