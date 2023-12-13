@@ -58,48 +58,58 @@ MainWindow::~MainWindow() {
 // Implement slots to update variables
 void MainWindow::on_lineEdit_2_textChanged(const QString &text) {
     ticker = text;
+    Q_UNUSED(text);
 }
+
 void MainWindow::onComboBoxIntervalChanged(const int& index)
 {
-        interval = comboBox->itemText(index);
-        qDebug() << "Selected Interval: " << interval;
+    interval = comboBox->itemText(index);
+    qDebug() << "Selected Interval: " << interval;
+    Q_UNUSED(index);
 }
 
 void MainWindow::onComboBoxExpirationChanged(const int& index)
 {
-        expirationDate = comboBox_2->itemText(index);
-        qDebug() << "Selected Interval: " << expirationDate;
+    expirationDate = comboBox_2->itemText(index);
+    qDebug() << "Selected Interval: " << expirationDate;
+    Q_UNUSED(index);
 }
 
 void MainWindow::on_lineEdit_11_textChanged(const QString &text) {
     filePath = text;
+    Q_UNUSED(text);
 }
 
 void MainWindow::setError(const QString& errorBuffer) {
     ui->lineEdit->setText(errorBuffer);
+    Q_UNUSED(errorBuffer);
 }
-
 
 // Implement new slots
 void MainWindow::on_dateEdit_startDateDateChanged(const QDate &date) {
     endDate = date;
+    Q_UNUSED(date);
 }
 
 void MainWindow::on_dateEdit_endDateDateChanged(const QDate &date) {
     startDate = date;
+    Q_UNUSED(date);
 }
 
 void MainWindow::on_checkBox_callsStateChanged(int state) {
     includeCalls = state == Qt::Checked;
+    Q_UNUSED(state);
 }
 
 void MainWindow::on_checkBox_putsStateChanged(int state) {
     includePuts = state == Qt::Checked;
+    Q_UNUSED(state);
 }
 
 void MainWindow::on_pushButton_clicked() {
     emit buttonPushed();
 }
+
 
 QString MainWindow::getTicker() const {
     return ticker;
