@@ -1,4 +1,4 @@
-# C++ Stock Data Scraper/Time-Seires Analyzer
+# C++ Stock Data Scraper/Time-Series Analyzer
 
 
 ## Description
