@@ -157,9 +157,8 @@ json GetHistoricalPrices(const std::string& symbol, const std::string& startDate
             }
             // Cleanup
             curl_easy_cleanup(curl);
-            return stockPacketParser(responseBuffer, errorBuffer);
         }
-
+        return stockPacketParser(responseBuffer, errorBuffer);
     } 
 
 void downloadCSV(const std::string& symbol, const std::string& period1, const std::string& period2, const std::string& interval, std::string& errorBuffer, std::string filePath = ""){
