@@ -53,6 +53,8 @@ file(GLOB_RECURSE SOURCES
 add_executable(query ${SOURCES})
 add_dependencies(query time_series)
 
+include_directories(${CMAKE_SOURCE_DIR}/external/time_series/include)
+
 target_link_libraries(query PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${CURL_LIBRARIES} mongocxx bsoncxx)
 
 
