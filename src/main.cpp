@@ -13,6 +13,8 @@
 #include <yahoo/options.hpp>
 #include <mongo/connect.hpp>
 
+#include "URT.hpp"
+
 
 //Make argc argv
 

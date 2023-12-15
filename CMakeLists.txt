@@ -55,6 +55,12 @@ add_dependencies(query time_series)
 
 include_directories(${CMAKE_SOURCE_DIR}/external/time_series/include)
 
-target_link_libraries(query PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${CURL_LIBRARIES} mongocxx bsoncxx)
+target_compile_definitions(query PRIVATE -DMKL_ILP64 -DUSE_EIGEN -DUSE_OMP -DUSE_MKL)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -Wl,--no-as-needed")
+
+# Include directories
+target_include_directories(query PRIVATE ${EIGEN3_INCLUDE_DIR} ${MKL_INCLUDE_DIR})
+
+target_link_libraries(query PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${CURL_LIBRARIES} mongocxx bsoncxx ${MKL_CORE_LIBRARY} ${MKL_THREAD_LIBRARY} ${MKL_ILP64_LIBRARY} -lgomp -lpthread -lm -ldl time_series)
 
 
