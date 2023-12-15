@@ -6,6 +6,7 @@
 Qt-based GUI tool for scraping historical data from Yahoo finance, saving locally or on Mongo clusters and including an API (forked from olmallet81/URT and reconfigured via cmake) for unit root testing of acquired time-series data.
 
 Current Configuration:
+* Built on WSL2 Ubuntu 22.04
 * Eigen >= 3.3.1
 * Intel OneAPI MKL 2024
 * libgomp1 12.3.0-1ubuntu1~22.04
