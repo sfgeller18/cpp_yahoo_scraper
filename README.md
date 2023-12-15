@@ -27,7 +27,7 @@ cd ../build && make
 
 ## Upcoming Updates
 
-Unit Testing: Will add a straightforward 4-5 test GoogleTest/CTest unit-test module to test installs tomorrow.
+*Unit Testing:* Will add a straightforward 4-5 test GoogleTest/CTest unit-test module to test installs tomorrow.
 
-Build Flexibility: Intend to add cross platform (WIN32 functionality for now), allow for optionality over use of MKL and OpenMP for the time-series module, make cloud functionality optional and provide headless run option once this version's glitches have been resolved.
+*Build Flexibility:* Intend to add cross platform (WIN32 for now) functionality, allow for optionality over use of MKL and OpenMP for the time-series module, make cloud functionality optional and provide headless run option once this version's glitches have been resolved.
 
