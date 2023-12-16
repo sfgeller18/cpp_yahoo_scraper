@@ -1,3 +1,6 @@
 [submodule "external/time_series"]
     path = external/time_series
     url = https://github.com/sfgeller18/time_series.git
+[submodule "external/googletest"]
+	path = external/googletest
+	url = https://github.com/google/googletest.git
