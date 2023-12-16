@@ -14,6 +14,16 @@ execute_process(
 
 add_subdirectory(external/time_series)
 
+include(FetchContent)
+FetchContent_Declare(googletest
+        GIT_REPOSITORY https://github.com/google/googletest
+        GIT_TAG v1.14.0)
+FetchContent_GetProperties(googletest)
+if(NOT googletest_POPULATED)
+    FetchContent_Populate(googletest)
+    add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BUILD_DIR})
+endif()
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MONGOCXX_FLAGS}")
 
 # Find and configure Qt
@@ -25,12 +35,11 @@ find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
 # Set directories
-set(FORMS_DIR "${CMAKE_SOURCE_DIR}/forms")
 set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 set(SOURCE_DIR "${CMAKE_SOURCE_DIR}/src")
+set(TEST_DIR "${CMAKE_SOURCE_DIR}/tests")
 
 # Add include directories
-include_directories(${FORMS_DIR})
 include_directories(${INCLUDE_DIR})
 include_directories(${SOURCE_DIR})
 
@@ -39,13 +48,10 @@ include_directories(${SOURCE_DIR})
 find_package(CURL REQUIRED)
 include_directories(${CURL_INCLUDE_DIR})
 
-set_property(SOURCE ${FORMS_DIR}/mainwindow.ui PROPERTY VS_TOOL_OVERRIDE "VCCustomBuildTool")
-
 # Collect source files
 file(GLOB_RECURSE SOURCES
     "${SOURCE_DIR}/*.cpp"
     "${SOURCE_DIR}/UI/*.cpp"
-    "${FORMS_DIR}/*.ui"
     "${INCLUDE_DIR}/*.hpp"
     "${INCLUDE_DIR}/*.h"
 )
@@ -63,4 +69,9 @@ target_include_directories(query PRIVATE ${EIGEN3_INCLUDE_DIR} ${MKL_INCLUDE_DIR
 
 target_link_libraries(query PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${CURL_LIBRARIES} mongocxx bsoncxx ${MKL_CORE_LIBRARY} ${MKL_THREAD_LIBRARY} ${MKL_ILP64_LIBRARY} -lgomp -lpthread -lm -ldl time_series)
 
+# Add tests subdirectory
+add_executable(tests)
+file(GLOB_RECURSE SOURCES "${TEST_DIR}/*.cpp")
 
+# Link against the tests executable
+target_link_libraries(tests PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${CURL_LIBRARIES} mongocxx bsoncxx ${MKL_CORE_LIBRARY} ${MKL_THREAD_LIBRARY} ${MKL_ILP64_LIBRARY} -lgomp -lpthread -lm -ldl time_series gtest_main)

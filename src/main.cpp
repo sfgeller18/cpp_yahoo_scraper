@@ -4,6 +4,7 @@
 #include <chrono>
 #include <iomanip> 
 #include <future>
+#include <csignal>
 
 
 #include <QApplication>
@@ -16,7 +17,11 @@
 #include "URT.hpp"
 
 
-//Make argc argv
+    static volatile int keepRunning = 1;
+
+    void intHandler(int dummy) {
+        keepRunning = 0;
+    }
 
 int main(int argc, char* argv[]) {
 
@@ -24,6 +29,8 @@ int main(int argc, char* argv[]) {
         std::cerr << "Usage: " << argv[0] << " <database_url>" << std::endl;
         return 1; // Return an error code
     }
+
+    while(keepRunning) {
     std::string databaseUrl = argv[1];
     std::vector<std::string> expirations = yahoo::options::getExpirations("AAPL");
     QStringList Qexpirations;
@@ -89,5 +96,7 @@ int main(int argc, char* argv[]) {
     int appResult = appFuture.get();
 
     return appResult;
-
+    }
+    std::cout<<"Caught SIGINT!"<<std::endl;
+    std::exit(0);
 }
