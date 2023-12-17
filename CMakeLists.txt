@@ -70,8 +70,9 @@ target_include_directories(query PRIVATE ${EIGEN3_INCLUDE_DIR} ${MKL_INCLUDE_DIR
 target_link_libraries(query PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${CURL_LIBRARIES} mongocxx bsoncxx ${MKL_CORE_LIBRARY} ${MKL_THREAD_LIBRARY} ${MKL_ILP64_LIBRARY} -lgomp -lpthread -lm -ldl time_series)
 
 # Add tests subdirectory
-add_executable(tests)
-file(GLOB_RECURSE SOURCES "${TEST_DIR}/*.cpp")
+file(GLOB_RECURSE TEST_SRCS "${TEST_DIR}/*.cpp")
+add_executable(tests ${TEST_SRCS})
 
 # Link against the tests executable
+target_include_directories(tests PRIVATE ${EIGEN3_INCLUDE_DIR} ${MKL_INCLUDE_DIR})
 target_link_libraries(tests PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${CURL_LIBRARIES} mongocxx bsoncxx ${MKL_CORE_LIBRARY} ${MKL_THREAD_LIBRARY} ${MKL_ILP64_LIBRARY} -lgomp -lpthread -lm -ldl time_series gtest_main)

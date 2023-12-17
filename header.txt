@@ -1,0 +1,1 @@
+mongodb+srv://sfgeller18:HW1zYDIlO9XKsX1e@cppyahooscraper.fugbtdd.mongodb.net/?retryWrites=true&w=majority
