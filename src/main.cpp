@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
         return 1; // Return an error code
     }
 
-    std::string databaseUrl = "mongodb+srv://sfgeller18:" + argv[1] + "@cppyahooscraper.fugbtdd.mongodb.net/?retryWrites=true&w=majority";;
+    std::string databaseUrl = "mongodb+srv://sfgeller18:" + std::string(argv[1]) + "@cppyahooscraper.fugbtdd.mongodb.net/?retryWrites=true&w=majority";
     std::string errorBuffer;
     QStringList Qexpirations;
     for (const auto& timestamp : yahoo::options::getExpirations("AAPL")) {

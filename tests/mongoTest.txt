@@ -1,15 +1,27 @@
-#ifndef MONGO_TEST
-#define MONGO_TEST
-
 #include <gtest/gtest.h>
+#include <string>
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
 #include "mongo/connect.hpp"
+#include "testHeader.h"
+
+std::string uri;
 
 class MongoConnectionTest : public ::testing::Test {
-protected:
-    // Add any member variables or helper methods you need
+    public:
+    MongoConnectionTest() {
+        // Initialize the connection using the external uri
+        connection_ = mongo::StockDataConnection(uri);
+        // Initialize document_id to an empty value
+        document_id_(bsoncxx::types::bson_value::view{});
+    }
+
+    // Getters
+    mongo::StockDataConnection& getConnection() { return connection_; }
+    void setDocumentId(const bsoncxx::types::bson_value::view& other) const { document_id_ = other; }
+    bool isTestDocumentInserted() const { return test_document_inserted_; }
+    bool changeStatus() { test_document_inserted_ = !test_document_inserted_; }
 
     void TearDown() override {
         // Clean up any resources after each test
@@ -25,6 +37,7 @@ protected:
         }
     }
 
+private:
     bool test_document_inserted_ = false;
     mongo::StockDataConnection connection_;
     bsoncxx::types::bson_value::view document_id_;
@@ -35,26 +48,18 @@ TEST(MongoConnectionTest, ConnectAndReadWrite) {
     // Create an instance of the test class
     MongoConnectionTest test;
 
-    // Construct the MongoDB URI for testing
-    std::string uri = "mongodb+srv://sfgeller18:" + argv[1] + "@cppyahooscraper.fugbtdd.mongodb.net/?retryWrites=true&w=majority";
-
-    // Establish a connection
-    test.connection_ = mongo::StockDataConnection(uri);
-
     // Insert a test document
     bsoncxx::builder::stream::document document{};
     document << "key" << "value";
-    auto result = test.connection_.getStockCollection().insert_one(document.view());
-    test.document_id_ = result->inserted_id().view();
-    test.test_document_inserted_ = true;
+    auto result = test.getConnection().getStockCollection().insert_one(document.view());
+    test.setDocumentId(result->inserted_id().view());
+    test.changeStatus();
 
     // Read the document from MongoDB
-    auto query_result = test.connection_.getStockCollection().find_one({});
+    auto query_result = test.getConnection().getStockCollection().find_one({});
     ASSERT_TRUE(query_result);
 
     bsoncxx::document::view result_doc = query_result->view();
     EXPECT_TRUE(result_doc["key"]);
     EXPECT_EQ(result_doc["key"].get_utf8().value.to_string(), "value");
 }
-
-#endif
